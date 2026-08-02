@@ -19,11 +19,11 @@ def get_settings() -> Settings:
 
 
 def get_supabase() -> Client:
+    """Cliente con service_role — bypasa RLS porque la autorización la maneja FastAPI."""
     s = get_settings()
-    return create_client(s.supabase_url, s.supabase_key)
+    return create_client(s.supabase_url, s.supabase_service_key)
 
 
 def get_supabase_admin() -> Client:
-    """Cliente con service_role para operaciones administrativas (crear usuarios)."""
-    s = get_settings()
-    return create_client(s.supabase_url, s.supabase_service_key)
+    """Alias para compatibilidad."""
+    return get_supabase()
