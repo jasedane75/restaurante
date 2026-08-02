@@ -19,7 +19,7 @@ const ESTADO_LABEL = {
 
 export default function Mesas() {
   const [mesas, setMesas] = useState([])
-  const [pedidosAbiertos, setPedidosAbiertos] = useState({})
+  const [pedidosActivos, setPedidosActivos] = useState({}) // mesa_id -> pedido completo
   const navigate = useNavigate()
 
   const cargar = async () => {
@@ -29,15 +29,16 @@ export default function Mesas() {
     ])
     setMesas(m)
     const map = {}
-    p.forEach((ped) => { if (ped.mesa_id) map[ped.mesa_id] = ped.id })
-    setPedidosAbiertos(map)
+    p.forEach((ped) => { if (ped.mesa_id) map[ped.mesa_id] = ped })
+    setPedidosActivos(map)
   }
 
   useEffect(() => { cargar() }, [])
 
   const handleClick = (mesa) => {
-    if (pedidosAbiertos[mesa.id]) {
-      navigate(`/pedido/${pedidosAbiertos[mesa.id]}`)
+    const pedido = pedidosActivos[mesa.id]
+    if (pedido) {
+      navigate(`/pedido/${pedido.id}`)
     } else if (mesa.estado === 'disponible' || mesa.estado === 'reservada') {
       navigate(`/pedido/nuevo/${mesa.id}`)
     } else {
@@ -55,20 +56,26 @@ export default function Mesas() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {mesas.map((mesa) => (
-          <button
-            key={mesa.id}
-            onClick={() => handleClick(mesa)}
-            className={`border-2 rounded-xl p-4 text-left transition-transform hover:scale-105 ${ESTADO_STYLE[mesa.estado]}`}
-          >
-            <p className="text-2xl font-bold">Mesa {mesa.numero}</p>
-            <p className="text-xs mt-1">{mesa.capacidad} personas</p>
-            <p className="text-xs mt-2 font-semibold">{ESTADO_LABEL[mesa.estado]}</p>
-            {pedidosAbiertos[mesa.id] && (
-              <p className="text-xs mt-1 opacity-70">Pedido #{pedidosAbiertos[mesa.id]}</p>
-            )}
-          </button>
-        ))}
+        {mesas.map((mesa) => {
+          const pedido = pedidosActivos[mesa.id]
+          return (
+            <button
+              key={mesa.id}
+              onClick={() => handleClick(mesa)}
+              className={`border-2 rounded-xl p-4 text-left transition-transform hover:scale-105 ${ESTADO_STYLE[mesa.estado]}`}
+            >
+              <p className="text-2xl font-bold">Mesa {mesa.numero}</p>
+              {pedido?.comensales
+                ? <p className="text-xs mt-1">👥 {pedido.comensales} personas</p>
+                : <p className="text-xs mt-1">{mesa.capacidad} personas (cap.)</p>
+              }
+              <p className="text-xs mt-2 font-semibold">{ESTADO_LABEL[mesa.estado]}</p>
+              {pedido && (
+                <p className="text-xs mt-1 opacity-70">Pedido #{pedido.id} • {pedido.estado}</p>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {/* Leyenda */}

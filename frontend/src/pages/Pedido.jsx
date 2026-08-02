@@ -16,10 +16,11 @@ export default function Pedido() {
   const [categorias, setCategorias] = useState([])
   const [productos, setProductos] = useState([])
   const [catActiva, setCatActiva] = useState(null)
-  const [carrito, setCarrito] = useState([])          // solo para pedido nuevo
+  const [carrito, setCarrito] = useState([])
   const [metodoPago, setMetodoPago] = useState('efectivo')
   const [descuento, setDescuento] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [editando, setEditando] = useState(false) // modo edición en pedido existente
 
   // Delivery
   const esDelivery = mesaId === '0'
@@ -42,8 +43,9 @@ export default function Pedido() {
   }, [pedidoId])
 
   const productosFiltrados = productos.filter((p) => p.categoria_id === catActiva)
+  const pedidoEditable = pedido && !['cerrado', 'cancelado'].includes(pedido.estado)
 
-  // ── Carrito (pedido nuevo) ────────────────────────────────
+  // ── Carrito (pedido nuevo o agregar a existente) ──────────
   const agregarAlCarrito = (producto) => {
     setCarrito((prev) => {
       const existe = prev.find((i) => i.producto_id === producto.id)
@@ -85,6 +87,35 @@ export default function Pedido() {
     }
   }
 
+  // ── Agregar items a pedido existente ──────────────────────
+  const agregarItemsAPedido = async () => {
+    if (!carrito.length) return
+    setLoading(true)
+    try {
+      const items = carrito.map(({ producto_id, cantidad, notas }) => ({ producto_id, cantidad, notas }))
+      const { data } = await api.post(`/pedidos/${pedidoId}/items`, items)
+      setPedido(data)
+      setCarrito([])
+      setEditando(false)
+      toast.success('Items agregados')
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Error al agregar items')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ── Eliminar item de pedido existente ─────────────────────
+  const eliminarItem = async (itemId) => {
+    try {
+      const { data } = await api.delete(`/pedidos/${pedidoId}/items/${itemId}`)
+      setPedido(data)
+      toast.success('Item eliminado')
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Error al eliminar')
+    }
+  }
+
   // ── Cambiar estado ────────────────────────────────────────
   const cambiarEstado = async (estado) => {
     const { data } = await api.patch(`/pedidos/${pedidoId}/estado`, { estado })
@@ -113,7 +144,7 @@ export default function Pedido() {
     <div className="flex flex-col lg:flex-row gap-6 h-full">
       {/* Panel izquierdo: menú */}
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
           <button onClick={() => navigate('/')} className="btn-secondary text-sm">← Volver</button>
           <h1 className="text-xl font-bold">
             {pedidoId ? `Pedido #${pedidoId}` : esDelivery ? 'Nuevo Delivery' : `Nueva Orden — Mesa ${mesaId}`}
@@ -121,11 +152,21 @@ export default function Pedido() {
           {pedido && (
             <span className="badge bg-gray-200 text-gray-700">{pedido.estado}</span>
           )}
+          {pedidoEditable && !editando && (
+            <button onClick={() => setEditando(true)} className="btn-secondary text-xs py-1 px-2">
+              ✏️ Agregar items
+            </button>
+          )}
+          {editando && (
+            <button onClick={() => { setEditando(false); setCarrito([]) }} className="btn-secondary text-xs py-1 px-2">
+              ✕ Cancelar edición
+            </button>
+          )}
         </div>
 
         {/* Datos delivery */}
         {esDelivery && !pedidoId && (
-          <div className="card mb-4 grid grid-cols-3 gap-3">
+          <div className="card mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <input className="input" placeholder="Nombre cliente" value={clienteNombre} onChange={(e) => setClienteNombre(e.target.value)} />
             <input className="input" placeholder="Teléfono" value={clienteTel} onChange={(e) => setClienteTel(e.target.value)} />
             <input className="input" placeholder="Dirección" value={direccion} onChange={(e) => setDireccion(e.target.value)} />
@@ -147,8 +188,8 @@ export default function Pedido() {
           </div>
         )}
 
-        {/* Categorías */}
-        {!pedidoId && (
+        {/* Categorías y productos - pedido nuevo O modo edición */}
+        {(!pedidoId || editando) && (
           <>
             <div className="flex gap-2 mb-3 flex-wrap">
               {categorias.map((c) => (
@@ -185,6 +226,7 @@ export default function Pedido() {
                   <th className="pb-2">Producto</th>
                   <th className="pb-2 text-center">Cant.</th>
                   <th className="pb-2 text-right">Subtotal</th>
+                  {pedidoEditable && <th className="pb-2 w-8"></th>}
                 </tr>
               </thead>
               <tbody>
@@ -193,6 +235,11 @@ export default function Pedido() {
                     <td className="py-2">{productos.find(p => p.id === item.producto_id)?.nombre || `#${item.producto_id}`}</td>
                     <td className="py-2 text-center">{item.cantidad}</td>
                     <td className="py-2 text-right">${item.subtotal.toFixed(2)}</td>
+                    {pedidoEditable && (
+                      <td className="py-2 text-right">
+                        <button onClick={() => eliminarItem(item.id)} className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -204,10 +251,10 @@ export default function Pedido() {
       {/* Panel derecho: resumen / acciones */}
       <div className="w-full lg:w-72 flex flex-col gap-4">
         <div className="card flex-1">
-          <h2 className="font-bold mb-3">{pedidoId ? 'Resumen' : 'Carrito'}</h2>
+          <h2 className="font-bold mb-3">{editando ? 'Nuevos items' : pedidoId ? 'Resumen' : 'Carrito'}</h2>
 
-          {/* Carrito nuevo */}
-          {!pedidoId && carrito.map((item) => (
+          {/* Carrito (nuevo o edición) */}
+          {(!pedidoId || editando) && carrito.map((item) => (
             <div key={item.producto_id} className="flex items-center justify-between mb-2 text-sm">
               <span className="flex-1 truncate">{item.nombre}</span>
               <div className="flex items-center gap-1 mx-2">
@@ -219,38 +266,49 @@ export default function Pedido() {
             </div>
           ))}
 
-          <div className="border-t pt-3 mt-3 space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span>${(pedido?.subtotal ?? subtotalCarrito).toFixed(2)}</span>
-            </div>
-            {esCajero && pedidoId && (
-              <div className="flex justify-between items-center">
-                <span>Descuento</span>
-                <input
-                  type="number" min="0"
-                  className="input w-24 text-right py-1"
-                  value={descuento}
-                  onChange={(e) => setDescuento(e.target.value)}
-                />
+          {!editando && (
+            <div className="border-t pt-3 mt-3 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>${(pedido?.subtotal ?? subtotalCarrito).toFixed(2)}</span>
               </div>
-            )}
-            <div className="flex justify-between font-bold text-base pt-1">
-              <span>Total</span>
-              <span>${(pedido ? totalPedido : subtotalCarrito).toFixed(2)}</span>
+              {esCajero && pedidoId && (
+                <div className="flex justify-between items-center">
+                  <span>Descuento</span>
+                  <input
+                    type="number" min="0"
+                    className="input w-24 text-right py-1"
+                    value={descuento}
+                    onChange={(e) => setDescuento(e.target.value)}
+                  />
+                </div>
+              )}
+              <div className="flex justify-between font-bold text-base pt-1">
+                <span>Total</span>
+                <span>${(pedido ? totalPedido : subtotalCarrito).toFixed(2)}</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Acciones */}
         <div className="card space-y-3">
+          {/* Crear pedido nuevo */}
           {!pedidoId && (
             <button onClick={crearPedido} disabled={loading || !carrito.length} className="btn-primary w-full">
               {loading ? 'Creando...' : 'Crear Pedido'}
             </button>
           )}
 
-          {pedido && pedido.estado !== 'cerrado' && pedido.estado !== 'cancelado' && (
+          {/* Agregar items en modo edición */}
+          {editando && (
+            <button onClick={agregarItemsAPedido} disabled={loading || !carrito.length} className="btn-primary w-full">
+              {loading ? 'Agregando...' : `Agregar ${carrito.length} item(s)`}
+            </button>
+          )}
+
+          {/* Acciones de pedido existente (no en modo edición) */}
+          {pedido && !editando && pedido.estado !== 'cerrado' && pedido.estado !== 'cancelado' && (
             <>
               {pedido.estado === 'abierto' && (
                 <button onClick={() => cambiarEstado('en_cocina')} className="btn-primary w-full">

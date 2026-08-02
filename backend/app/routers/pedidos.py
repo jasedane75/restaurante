@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.models.schemas import PedidoIn, PedidoOut, PedidoEstadoIn, CerrarPedidoIn, VentaOut
+from app.models.schemas import PedidoIn, PedidoOut, PedidoEstadoIn, CerrarPedidoIn, VentaOut, DetallePedidoIn
 from app.auth import get_current_user, require_roles
 from app.db import get_supabase
 from datetime import datetime, timezone
@@ -96,6 +96,73 @@ def crear_pedido(data: PedidoIn, user=Depends(require_roles("dueno", "cajero", "
 
     return _enriquecer_pedido(
         sb.table("pedidos").select("*").eq("id", pedido["id"]).execute().data[0]
+    )
+
+
+@router.post("/{pedido_id}/items", response_model=PedidoOut)
+def agregar_items(
+    pedido_id: int,
+    items: list[DetallePedidoIn],
+    user=Depends(require_roles("dueno", "cajero", "mesero")),
+):
+    """Agregar productos a un pedido existente (que no esté cerrado/cancelado)."""
+    sb = get_supabase()
+
+    pedido = sb.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not pedido:
+        raise HTTPException(404, "Pedido no encontrado")
+    pedido = pedido[0]
+
+    if pedido["estado"] in ("cerrado", "cancelado"):
+        raise HTTPException(400, "No se puede modificar un pedido cerrado o cancelado")
+
+    # Obtener precios
+    ids = [i.producto_id for i in items]
+    productos = {
+        p["id"]: p
+        for p in sb.table("productos").select("id,precio,disponible").in_("id", ids).execute().data
+    }
+
+    for item in items:
+        if item.producto_id not in productos:
+            raise HTTPException(400, f"Producto {item.producto_id} no existe")
+
+    detalle = [
+        {
+            "pedido_id": pedido_id,
+            "producto_id": item.producto_id,
+            "cantidad": item.cantidad,
+            "precio_unitario": float(productos[item.producto_id]["precio"]),
+            "notas": item.notas,
+        }
+        for item in items
+    ]
+    sb.table("detalle_pedidos").insert(detalle).execute()
+
+    return _enriquecer_pedido(
+        sb.table("pedidos").select("*").eq("id", pedido_id).execute().data[0]
+    )
+
+
+@router.delete("/{pedido_id}/items/{item_id}", response_model=PedidoOut)
+def eliminar_item(
+    pedido_id: int,
+    item_id: int,
+    user=Depends(require_roles("dueno", "cajero", "mesero")),
+):
+    """Eliminar un item de un pedido existente."""
+    sb = get_supabase()
+
+    pedido = sb.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not pedido:
+        raise HTTPException(404, "Pedido no encontrado")
+    if pedido[0]["estado"] in ("cerrado", "cancelado"):
+        raise HTTPException(400, "No se puede modificar un pedido cerrado o cancelado")
+
+    sb.table("detalle_pedidos").delete().eq("id", item_id).eq("pedido_id", pedido_id).execute()
+
+    return _enriquecer_pedido(
+        sb.table("pedidos").select("*").eq("id", pedido_id).execute().data[0]
     )
 
 
