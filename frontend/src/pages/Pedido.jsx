@@ -106,9 +106,9 @@ export default function Pedido() {
 
   // ── RENDER ────────────────────────────────────────────────
   return (
-    <div className="flex gap-6 h-full">
+    <div className="flex flex-col lg:flex-row gap-6 h-full">
       {/* Panel izquierdo: menú */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={() => navigate('/')} className="btn-secondary text-sm">← Volver</button>
           <h1 className="text-xl font-bold">
@@ -183,7 +183,7 @@ export default function Pedido() {
       </div>
 
       {/* Panel derecho: resumen / acciones */}
-      <div className="w-72 flex flex-col gap-4">
+      <div className="w-full lg:w-72 flex flex-col gap-4">
         <div className="card flex-1">
           <h2 className="font-bold mb-3">{pedidoId ? 'Resumen' : 'Carrito'}</h2>
 
