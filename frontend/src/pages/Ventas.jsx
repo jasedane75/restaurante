@@ -17,8 +17,8 @@ export default function Ventas() {
 
     const [v, r, t] = await Promise.all([
       api.get(`/ventas/?${params}`),
-      api.get('/ventas/resumen-diario'),
-      api.get('/ventas/productos-top'),
+      api.get(`/ventas/resumen-diario?${params}`),
+      api.get(`/ventas/productos-top?${params}`),
     ])
     setVentas(v.data)
     setResumen(r.data)

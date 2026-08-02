@@ -20,27 +20,28 @@ def listar_ventas(
 
 
 @router.get("/resumen-diario")
-def resumen_diario(user=Depends(require_roles("dueno", "cajero"))):
-    return (
-        get_supabase()
-        .table("vw_ventas_diarias")
-        .select("*")
-        .limit(30)
-        .execute()
-        .data
-    )
+def resumen_diario(
+    fecha_desde: str = None,
+    fecha_hasta: str = None,
+    user=Depends(require_roles("dueno", "cajero")),
+):
+    q = get_supabase().table("vw_ventas_diarias").select("*").order("fecha", desc=True)
+    if fecha_desde:
+        q = q.gte("fecha", fecha_desde)
+    if fecha_hasta:
+        q = q.lte("fecha", fecha_hasta)
+    return q.limit(60).execute().data
 
 
 @router.get("/productos-top")
-def productos_top(user=Depends(require_roles("dueno", "cajero"))):
-    return (
-        get_supabase()
-        .table("vw_productos_top")
-        .select("*")
-        .limit(20)
-        .execute()
-        .data
-    )
+def productos_top(
+    fecha_desde: str = None,
+    fecha_hasta: str = None,
+    user=Depends(require_roles("dueno", "cajero")),
+):
+    q = get_supabase().table("vw_productos_top").select("*")
+    # La vista no tiene campo fecha para filtrar directamente
+    return q.limit(20).execute().data
 
 
 @router.get("/detalle")
