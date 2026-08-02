@@ -166,6 +166,34 @@ def eliminar_item(
     )
 
 
+@router.delete("/{pedido_id}", response_model=dict)
+def cancelar_pedido(
+    pedido_id: int,
+    user=Depends(require_roles("dueno", "cajero", "mesero")),
+):
+    """Cancelar pedido y liberar la mesa."""
+    sb = get_supabase()
+
+    pedido = sb.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not pedido:
+        raise HTTPException(404, "Pedido no encontrado")
+    pedido = pedido[0]
+
+    if pedido["estado"] == "cerrado":
+        raise HTTPException(400, "No se puede cancelar un pedido ya cerrado")
+
+    # Marcar como cancelado
+    sb.table("pedidos").update({
+        "estado": "cancelado",
+    }).eq("id", pedido_id).execute()
+
+    # Liberar mesa
+    if pedido.get("mesa_id"):
+        sb.table("mesas").update({"estado": "disponible"}).eq("id", pedido["mesa_id"]).execute()
+
+    return {"message": "Pedido cancelado y mesa liberada"}
+
+
 @router.patch("/{pedido_id}/estado", response_model=PedidoOut)
 def cambiar_estado(
     pedido_id: int,

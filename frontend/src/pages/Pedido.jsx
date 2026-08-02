@@ -116,6 +116,21 @@ export default function Pedido() {
     }
   }
 
+  // ── Cancelar pedido ─────────────────────────────────────
+  const cancelarPedido = async () => {
+    if (!confirm('¿Cancelar este pedido? La mesa quedará libre.')) return
+    setLoading(true)
+    try {
+      await api.delete(`/pedidos/${pedidoId}`)
+      toast.success('Pedido cancelado')
+      navigate('/')
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Error al cancelar')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // ── Cambiar estado ────────────────────────────────────────
   const cambiarEstado = async (estado) => {
     const { data } = await api.patch(`/pedidos/${pedidoId}/estado`, { estado })
@@ -341,6 +356,14 @@ export default function Pedido() {
 
           {pedido?.estado === 'cerrado' && (
             <p className="text-center text-green-600 font-semibold">✅ Pedido cerrado</p>
+          )}
+          {pedido?.estado === 'cancelado' && (
+            <p className="text-center text-red-600 font-semibold">❌ Pedido cancelado</p>
+          )}
+          {pedidoEditable && !editando && (
+            <button onClick={cancelarPedido} disabled={loading} className="btn-secondary w-full text-red-600 border-red-300 hover:bg-red-50">
+              🗑️ Cancelar pedido
+            </button>
           )}
         </div>
       </div>
