@@ -24,8 +24,8 @@ export default function Layout() {
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <aside className="w-56 bg-gray-900 text-white flex flex-col">
-        <div className="p-4 border-b border-gray-700">
+      <aside className="w-56 bg-[#3E2723] text-white flex flex-col">
+        <div className="p-4 border-b border-[#5D4037]">
           <p className="font-bold text-brand-500 text-lg">🍴 Restaurante</p>
           <p className="text-xs text-gray-400 mt-1">{usuario?.nombre}</p>
           <span className="badge bg-brand-500 text-white mt-1">{usuario?.rol}</span>
@@ -38,7 +38,7 @@ export default function Layout() {
               end={n.to === '/'}
               className={({ isActive }) =>
                 `block px-3 py-2 rounded-lg text-sm transition-colors ${
-                  isActive ? 'bg-brand-500 text-white' : 'text-gray-300 hover:bg-gray-700'
+                  isActive ? 'bg-[#6D4C41] text-white' : 'text-gray-300 hover:bg-[#4E342E]'
                 }`
               }
             >
