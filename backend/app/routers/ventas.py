@@ -13,9 +13,9 @@ def listar_ventas(
 ):
     q = get_supabase().table("ventas").select("*, pedidos(tipo, mesa_id)").order("creado_en", desc=True)
     if fecha_desde:
-        q = q.gte("creado_en", fecha_desde)
+        q = q.gte("creado_en", f"{fecha_desde}T00:00:00")
     if fecha_hasta:
-        q = q.lte("creado_en", fecha_hasta)
+        q = q.lte("creado_en", f"{fecha_hasta}T23:59:59")
     return q.execute().data
 
 
@@ -53,7 +53,7 @@ def ventas_detalle(
     """Endpoint principal para Power BI."""
     q = get_supabase().table("vw_ventas_detalle").select("*")
     if fecha_desde:
-        q = q.gte("fecha_venta", fecha_desde)
+        q = q.gte("fecha_venta", f"{fecha_desde}T00:00:00")
     if fecha_hasta:
-        q = q.lte("fecha_venta", fecha_hasta)
+        q = q.lte("fecha_venta", f"{fecha_hasta}T23:59:59")
     return q.execute().data
