@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import api from '../api'
+import formatMoney from '../utils/formatMoney'
 
 const FORM_VACIO = { categoria_id: '', nombre: '', descripcion: '', precio: '', disponible: true, imagen_url: '' }
 
@@ -108,7 +109,7 @@ export default function Productos() {
                 <p className="font-semibold">{p.nombre}</p>
                 <p className="text-xs text-gray-400">{categorias.find((c) => c.id === p.categoria_id)?.nombre || 'Sin categoría'}</p>
               </div>
-              <span className="font-bold text-brand-600">${Number(p.precio).toFixed(2)}</span>
+              <span className="font-bold text-brand-600">{formatMoney(p.precio)}</span>
             </div>
             {p.descripcion && <p className="text-xs text-gray-500">{p.descripcion}</p>}
             <div className="flex gap-2 mt-auto pt-2 border-t">

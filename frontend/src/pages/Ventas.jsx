@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import api from '../api'
+import formatMoney from '../utils/formatMoney'
 
 export default function Ventas() {
   const [ventas, setVentas] = useState([])
@@ -43,7 +44,7 @@ export default function Ventas() {
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="card text-center">
-          <p className="text-3xl font-bold text-brand-500">${totalDia.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-brand-500">{formatMoney(totalDia)}</p>
           <p className="text-sm text-gray-500 mt-1">Total ventas</p>
         </div>
         <div className="card text-center">
@@ -52,7 +53,7 @@ export default function Ventas() {
         </div>
         <div className="card text-center">
           <p className="text-3xl font-bold text-brand-500">
-            ${ventas.length ? (totalDia / ventas.length).toFixed(2) : '0.00'}
+            {formatMoney(ventas.length ? (totalDia / ventas.length) : 0)}
           </p>
           <p className="text-sm text-gray-500 mt-1">Ticket promedio</p>
         </div>
@@ -87,7 +88,7 @@ export default function Ventas() {
                   <td className="py-2">{new Date(v.creado_en).toLocaleString('es')}</td>
                   <td className="py-2 capitalize">{v.pedidos?.tipo || '—'}</td>
                   <td className="py-2 capitalize">{v.metodo_pago}</td>
-                  <td className="py-2 text-right font-semibold">${v.total.toFixed(2)}</td>
+                  <td className="py-2 text-right font-semibold">{formatMoney(v.total)}</td>
                   <td className="py-2 text-center">
                     <span className={`badge ${v.estado_pago === 'pagado' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {v.estado_pago}
@@ -118,8 +119,8 @@ export default function Ventas() {
                 <tr key={r.fecha} className="border-b last:border-0 hover:bg-gray-50">
                   <td className="py-2">{r.fecha}</td>
                   <td className="py-2 text-right">{r.total_ventas}</td>
-                  <td className="py-2 text-right font-semibold">${Number(r.ingresos_total).toFixed(2)}</td>
-                  <td className="py-2 text-right">${Number(r.ticket_promedio).toFixed(2)}</td>
+                  <td className="py-2 text-right font-semibold">{formatMoney(r.ingresos_total)}</td>
+                  <td className="py-2 text-right">{formatMoney(r.ticket_promedio)}</td>
                   <td className="py-2 text-right">{r.pedidos_mesa}</td>
                   <td className="py-2 text-right">{r.pedidos_delivery}</td>
                 </tr>
@@ -148,7 +149,7 @@ export default function Ventas() {
                   <td className="py-2 font-medium">{p.producto}</td>
                   <td className="py-2 text-gray-500">{p.categoria}</td>
                   <td className="py-2 text-right">{p.unidades_vendidas}</td>
-                  <td className="py-2 text-right font-semibold">${Number(p.ingresos_total).toFixed(2)}</td>
+                  <td className="py-2 text-right font-semibold">{formatMoney(p.ingresos_total)}</td>
                 </tr>
               ))}
             </tbody>

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../api'
 import useAuthStore from '../store/authStore'
+import formatMoney from '../utils/formatMoney'
 
 const METODOS_PAGO = ['efectivo', 'tarjeta', 'transferencia', 'otro']
 
@@ -225,7 +226,7 @@ export default function Pedido() {
                   className="card text-left hover:border-brand-500 hover:border transition-colors"
                 >
                   <p className="font-semibold text-sm">{p.nombre}</p>
-                  <p className="text-brand-600 font-bold mt-1">${p.precio.toFixed(2)}</p>
+                  <p className="text-brand-600 font-bold mt-1">{formatMoney(p.precio)}</p>
                 </button>
               ))}
             </div>
@@ -249,7 +250,7 @@ export default function Pedido() {
                   <tr key={item.id} className="border-b last:border-0">
                     <td className="py-2">{productos.find(p => p.id === item.producto_id)?.nombre || `#${item.producto_id}`}</td>
                     <td className="py-2 text-center">{item.cantidad}</td>
-                    <td className="py-2 text-right">${item.subtotal.toFixed(2)}</td>
+                    <td className="py-2 text-right">{formatMoney(item.subtotal)}</td>
                     {pedidoEditable && (
                       <td className="py-2 text-right">
                         <button onClick={() => eliminarItem(item.id)} className="text-red-400 hover:text-red-600 text-xs">✕</button>
@@ -277,7 +278,7 @@ export default function Pedido() {
                 <span className="w-5 text-center">{item.cantidad}</span>
                 <button onClick={() => cambiarCantidad(item.producto_id, 1)} className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300">+</button>
               </div>
-              <span className="font-semibold">${(item.precio * item.cantidad).toFixed(2)}</span>
+              <span className="font-semibold">{formatMoney(item.precio * item.cantidad)}</span>
             </div>
           ))}
 
@@ -285,7 +286,7 @@ export default function Pedido() {
             <div className="border-t pt-3 mt-3 space-y-1 text-sm">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>${(pedido?.subtotal ?? subtotalCarrito).toFixed(2)}</span>
+                <span>{formatMoney(pedido?.subtotal ?? subtotalCarrito)}</span>
               </div>
               {esCajero && pedidoId && (
                 <div className="flex justify-between items-center">
@@ -300,7 +301,7 @@ export default function Pedido() {
               )}
               <div className="flex justify-between font-bold text-base pt-1">
                 <span>Total</span>
-                <span>${(pedido ? totalPedido : subtotalCarrito).toFixed(2)}</span>
+                <span>{formatMoney(pedido ? totalPedido : subtotalCarrito)}</span>
               </div>
             </div>
           )}
