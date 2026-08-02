@@ -11,12 +11,25 @@ def listar_ventas(
     fecha_hasta: str = None,
     user=Depends(require_roles("dueno", "cajero")),
 ):
-    q = get_supabase().table("ventas").select("*, pedidos(tipo, mesa_id)").order("creado_en", desc=True)
-    if fecha_desde:
-        q = q.gte("creado_en", f"{fecha_desde}T00:00:00")
-    if fecha_hasta:
-        q = q.lte("creado_en", f"{fecha_hasta}T23:59:59")
-    return q.execute().data
+    """Usa la vista vw_ventas_detalle que ya tiene fecha en zona horaria Colombia."""
+    if fecha_desde or fecha_hasta:
+        # Cuando hay filtro de fecha, consultar la tabla ventas con rango amplio en UTC
+        q = get_supabase().table("ventas").select("*, pedidos(tipo, mesa_id)").order("creado_en", desc=True)
+        if fecha_desde:
+            q = q.gte("creado_en", f"{fecha_desde}T00:00:00-05:00")
+        if fecha_hasta:
+            q = q.lte("creado_en", f"{fecha_hasta}T23:59:59-05:00")
+        return q.execute().data
+    else:
+        return (
+            get_supabase()
+            .table("ventas")
+            .select("*, pedidos(tipo, mesa_id)")
+            .order("creado_en", desc=True)
+            .limit(100)
+            .execute()
+            .data
+        )
 
 
 @router.get("/resumen-diario")
@@ -53,7 +66,7 @@ def ventas_detalle(
     """Endpoint principal para Power BI."""
     q = get_supabase().table("vw_ventas_detalle").select("*")
     if fecha_desde:
-        q = q.gte("fecha_venta", f"{fecha_desde}T00:00:00")
+        q = q.gte("fecha", fecha_desde)
     if fecha_hasta:
-        q = q.lte("fecha_venta", f"{fecha_hasta}T23:59:59")
+        q = q.lte("fecha", fecha_hasta)
     return q.execute().data
