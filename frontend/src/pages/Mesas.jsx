@@ -25,7 +25,7 @@ export default function Mesas() {
   const cargar = async () => {
     const [{ data: m }, { data: p }] = await Promise.all([
       api.get('/mesas/'),
-      api.get('/pedidos/?estado=abierto'),
+      api.get('/pedidos/?estado=activos'),
     ])
     setMesas(m)
     const map = {}

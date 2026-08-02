@@ -85,6 +85,7 @@ class DetallePedidoIn(BaseModel):
 class PedidoIn(BaseModel):
     tipo: Literal["mesa", "delivery"] = "mesa"
     mesa_id: Optional[int] = None
+    comensales: Optional[int] = None
     cliente_nombre: Optional[str] = None
     cliente_telefono: Optional[str] = None
     direccion_entrega: Optional[str] = None
@@ -109,6 +110,7 @@ class PedidoOut(BaseModel):
     id: int
     tipo: str
     mesa_id: Optional[int]
+    comensales: Optional[int] = None
     estado: str
     subtotal: float
     descuento: float

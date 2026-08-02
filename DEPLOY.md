@@ -46,7 +46,7 @@ VALUES (
   'dueno'
 );
 ```
-
+Password_secure_2027.
 ---
 
 ## PASO 2 — Render (Backend)

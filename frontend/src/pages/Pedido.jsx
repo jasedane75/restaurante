@@ -27,6 +27,9 @@ export default function Pedido() {
   const [clienteTel, setClienteTel] = useState('')
   const [direccion, setDireccion] = useState('')
 
+  // Comensales (mesa)
+  const [comensales, setComensales] = useState('')
+
   useEffect(() => {
     api.get('/productos/categorias').then(({ data }) => {
       setCategorias(data)
@@ -66,6 +69,7 @@ export default function Pedido() {
       const payload = {
         tipo: esDelivery ? 'delivery' : 'mesa',
         mesa_id: esDelivery ? null : Number(mesaId),
+        comensales: esDelivery ? null : (comensales ? Number(comensales) : null),
         cliente_nombre: esDelivery ? clienteNombre : null,
         cliente_telefono: esDelivery ? clienteTel : null,
         direccion_entrega: esDelivery ? direccion : null,
@@ -125,6 +129,21 @@ export default function Pedido() {
             <input className="input" placeholder="Nombre cliente" value={clienteNombre} onChange={(e) => setClienteNombre(e.target.value)} />
             <input className="input" placeholder="Teléfono" value={clienteTel} onChange={(e) => setClienteTel(e.target.value)} />
             <input className="input" placeholder="Dirección" value={direccion} onChange={(e) => setDireccion(e.target.value)} />
+          </div>
+        )}
+
+        {/* Comensales (mesa) */}
+        {!esDelivery && !pedidoId && (
+          <div className="card mb-4 flex items-center gap-3">
+            <label className="text-sm font-medium">👥 Personas en la mesa:</label>
+            <input
+              className="input w-20"
+              type="number"
+              min="1"
+              placeholder="?"
+              value={comensales}
+              onChange={(e) => setComensales(e.target.value)}
+            />
           </div>
         )}
 

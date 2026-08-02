@@ -23,7 +23,9 @@ def _enriquecer_pedido(pedido: dict) -> dict:
 @router.get("/", response_model=list[PedidoOut])
 def listar_pedidos(estado: str = None, user=Depends(get_current_user)):
     q = get_supabase().table("pedidos").select("*").order("creado_en", desc=True)
-    if estado:
+    if estado == "activos":
+        q = q.in_("estado", ["abierto", "en_cocina", "listo"])
+    elif estado:
         q = q.eq("estado", estado)
     pedidos = q.execute().data
     return [_enriquecer_pedido(p) for p in pedidos]
@@ -67,6 +69,7 @@ def crear_pedido(data: PedidoIn, user=Depends(require_roles("dueno", "cajero", "
         "tipo": data.tipo,
         "mesa_id": data.mesa_id,
         "usuario_id": user["sub"],
+        "comensales": data.comensales,
         "cliente_nombre": data.cliente_nombre,
         "cliente_telefono": data.cliente_telefono,
         "direccion_entrega": data.direccion_entrega,
